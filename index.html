@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C-FORTE ナレッジWiki</title>
+<style>
+  :root {
+    --navy: #1a3a5c;
+    --navy-light: #254e7a;
+    --teal: #1D9E75;
+    --teal-light: #E1F5EE;
+    --bg: #f5f7fa;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #1e293b;
+    --text-muted: #64748b;
+    --text-hint: #94a3b8;
+    --link: #185FA5;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body { font-family: -apple-system, 'Hiragino Sans', 'Noto Sans JP', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ===================== LOGIN SCREEN ===================== */
+  #login-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--navy);
+  }
+  .login-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 40px 36px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+  }
+  .login-logo {
+    width: 52px;
+    height: 52px;
+    background: var(--navy);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 18px;
+  }
+  .login-logo svg { width: 28px; height: 28px; stroke: #fff; fill: none; stroke-width: 2; }
+  .login-title { font-size: 20px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
+  .login-sub { font-size: 12.5px; color: var(--text-muted); margin-bottom: 28px; }
+  .login-label { display: block; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; }
+  .login-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-md);
+    font-size: 15px;
+    letter-spacing: .12em;
+    outline: none;
+    transition: border-color .15s;
+    margin-bottom: 10px;
+  }
+  .login-input:focus { border-color: var(--navy); }
+  .login-btn {
+    width: 100%;
+    padding: 13px;
+    background: var(--navy);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: background .15s;
+  }
+  .login-btn:hover { background: var(--navy-light); }
+  .login-error {
+    display: none;
+    background: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    font-size: 12.5px;
+    margin-top: 10px;
+  }
+  .login-hint { font-size: 11px; color: var(--text-hint); margin-top: 20px; }
+
+  /* ===================== APP ===================== */
+  #app { display: none; }
+  .layout { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; }
+  .sidebar { background: var(--navy); color: #fff; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  .sidebar-head { padding: 20px 18px 14px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+  .sidebar-logo { font-size: 15px; font-weight: 700; letter-spacing: .02em; display: flex; align-items: center; gap: 8px; }
+  .sidebar-logo svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; }
+  .sidebar-sub { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+  .sidebar-section-label { font-size: 10px; color: rgba(255,255,255,0.4); letter-spacing: .08em; text-transform: uppercase; padding: 14px 18px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 18px; cursor: pointer; font-size: 12.5px; color: rgba(255,255,255,0.7); border-left: 3px solid transparent; transition: all .12s; }
+  .nav-item:hover { background: rgba(255,255,255,0.07); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,0.11); color: #fff; border-left-color: var(--teal); }
+  .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; }
+  .nav-count { margin-left: auto; background: rgba(255,255,255,0.13); border-radius: 20px; padding: 1px 7px; font-size: 10px; }
+  .sidebar-footer { padding: 14px 18px; border-top: 1px solid rgba(255,255,255,0.1); }
+  .logout-btn { display: flex; align-items: center; gap: 7px; font-size: 12px; color: rgba(255,255,255,0.5); cursor: pointer; background: none; border: none; padding: 0; transition: color .12s; }
+  .logout-btn:hover { color: #fff; }
+  .logout-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .main { display: flex; flex-direction: column; min-height: 100vh; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; gap: 12px; position: sticky; top: 0; z-index: 10; }
+  .topbar-title { font-size: 13px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .search-wrap { flex: 1; position: relative; }
+  .search-wrap svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); width: 15px; height: 15px; fill: none; stroke: var(--text-hint); stroke-width: 2; pointer-events: none; }
+  .search-input { width: 100%; padding: 9px 12px 9px 34px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; background: var(--bg); color: var(--text); outline: none; transition: border-color .15s; }
+  .search-input:focus { border-color: var(--navy); background: #fff; }
+  .search-input::placeholder { color: var(--text-hint); }
+  .tab-bar { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; }
+  .tab { padding: 12px 20px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--text-muted); border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 6px; transition: color .12s; }
+  .tab svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .tab.active { color: var(--navy); border-bottom-color: var(--navy); }
+  #search-panel { padding: 20px 24px; flex: 1; }
+  .result-meta { font-size: 11px; color: var(--text-hint); margin-bottom: 12px; }
+  .section-header { font-size: 10.5px; font-weight: 600; color: var(--text-hint); text-transform: uppercase; letter-spacing: .06em; padding: 12px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; margin-top: 4px; }
+  .file-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: flex-start; gap: 11px; cursor: pointer; transition: border-color .12s, box-shadow .12s; text-decoration: none; color: inherit; }
+  .file-card:hover { border-color: var(--navy); box-shadow: 0 2px 8px rgba(26,58,92,.07); }
+  .file-icon-wrap { width: 34px; height: 34px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .file-icon-wrap svg { width: 17px; height: 17px; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .file-title { font-size: 13px; font-weight: 600; color: var(--link); line-height: 1.4; margin-bottom: 4px; }
+  .file-desc { font-size: 11.5px; color: var(--text-muted); line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .file-meta-row { display: flex; align-items: center; gap: 7px; margin-top: 6px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+  .file-cat { font-size: 10.5px; color: var(--text-hint); }
+  mark { background: #fef3c7; border-radius: 2px; padding: 0 1px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-hint); }
+  .empty-state svg { width: 40px; height: 40px; margin-bottom: 12px; opacity: .4; fill: none; stroke: currentColor; stroke-width: 1.5; }
+  .empty-state p { font-size: 13px; }
+  #chat-panel { display: none; flex-direction: column; height: calc(100vh - 115px); }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+  .msg-wrap { display: flex; align-items: flex-end; gap: 8px; }
+  .msg-wrap.user { flex-direction: row-reverse; }
+  .msg-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .msg-avatar.ai-av { background: var(--navy); color: #fff; }
+  .msg-avatar.user-av { background: var(--teal); color: #fff; }
+  .msg { max-width: 78%; padding: 11px 15px; font-size: 13px; line-height: 1.7; }
+  .msg.ai { background: var(--surface); border: 1px solid var(--border); border-radius: 14px 14px 14px 4px; color: var(--text); }
+  .msg.user { background: var(--navy); color: #fff; border-radius: 14px 14px 4px 14px; }
+  .msg.thinking { opacity: .6; font-style: italic; }
+  .msg a { color: var(--link); word-break: break-all; }
+  .msg strong { font-weight: 600; }
+  .suggest-pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+  .suggest-pill { padding: 5px 12px; border: 1px solid var(--border); border-radius: 20px; font-size: 11.5px; cursor: pointer; background: var(--surface); color: var(--text-muted); transition: all .12s; }
+  .suggest-pill:hover { border-color: var(--navy); color: var(--navy); background: #eef3fa; }
+  .chat-input-area { padding: 14px 24px; border-top: 1px solid var(--border); background: var(--surface); display: flex; gap: 10px; }
+  .chat-input { flex: 1; padding: 11px 16px; border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 13px; outline: none; transition: border-color .15s; }
+  .chat-input:focus { border-color: var(--navy); }
+  .send-btn { padding: 11px 20px; background: var(--navy); color: #fff; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background .12s; }
+  .send-btn:hover { background: var(--navy-light); }
+  .send-btn svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+
+  @media (max-width: 700px) {
+    .layout { grid-template-columns: 1fr; }
+    .sidebar { display: none; }
+    .topbar { padding: 10px 14px; }
+    #search-panel { padding: 14px; }
+    .chat-messages { padding: 14px; }
+    .chat-input-area { padding: 10px 14px; }
+    .tab-bar { padding: 0 14px; }
+    #chat-panel { height: calc(100vh - 106px); }
+    .login-card { margin: 20px; padding: 32px 24px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </div>
+    <div class="login-title">C-FORTE ナレッジWiki</div>
+    <div class="login-sub">社内スタッフ専用システム</div>
+    <label class="login-label">パスワード</label>
+    <input class="login-input" type="password" id="pwInput" placeholder="パスワードを入力" onkeydown="if(event.key==='Enter')checkPW()">
+    <button class="login-btn" onclick="checkPW()">ログイン</button>
+    <div class="login-error" id="pwError">パスワードが正しくありません。再度お試しください。</div>
+    <div class="login-hint">※ パスワードがわからない場合は管理者（石田）にお問い合わせください</div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        C-FORTE Wiki
+      </div>
+      <div class="sidebar-sub">社内ナレッジ & AIアシスタント</div>
+    </div>
+    <div class="sidebar-section-label">カテゴリ</div>
+    <nav id="sidenav"></nav>
+    <div class="sidebar-footer">
+      <button class="logout-btn" onclick="logout()">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        ログアウト
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="topbar-title" id="topbar-title">すべての資料</span>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" type="text" id="searchInput" placeholder="資料名・キーワードで検索（例：ASC、クロージング、KPI）" oninput="doSearch()">
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" id="tab-search" onclick="switchTab('search')">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        資料を探す
+      </div>
+      <div class="tab" id="tab-chat" onclick="switchTab('chat')">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AIに質問する
+      </div>
+    </div>
+
+    <div id="search-panel">
+      <div class="result-meta" id="result-meta"></div>
+      <div id="results"></div>
+    </div>
+
+    <div id="chat-panel">
+      <div class="chat-messages" id="chatMessages">
+        <div class="msg-wrap">
+          <div class="msg-avatar ai-av">CF</div>
+          <div class="msg ai">
+            こんにちは！C-FORTEナレッジWikiのAIアシスタントです。資料の場所・内容・使い方など、なんでも質問してください。
+            <div class="suggest-pills">
+              <button class="suggest-pill" onclick="askQ('ASCのリハビリ資料はどこにありますか？')">ASCのリハビリ資料は？</button>
+              <button class="suggest-pill" onclick="askQ('新人スタッフが最初に読むべき資料を教えて')">新人向け資料は？</button>
+              <button class="suggest-pill" onclick="askQ('クロージングのトークスクリプトはどれですか？')">クロージング資料は？</button>
+              <button class="suggest-pill" onclick="askQ('KPIの入力方法を教えてください')">KPI入力方法は？</button>
+              <button class="suggest-pill" onclick="askQ('Slackのルールが書いてある資料はどこ？')">Slackのルールは？</button>
+              <button class="suggest-pill" onclick="askQ('前受金の税理士提出資料はどれですか？')">前受金の資料は？</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <input class="chat-input" type="text" id="chatInput" placeholder="質問を入力してください..." onkeydown="if(event.key==='Enter')sendChat()">
+        <button class="send-btn" onclick="sendChat()">
+          <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          送信
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// ===================== パスワード設定 =====================
+// ここを変更してパスワードを設定してください
+const PASSWORDS = ['cforte2024', 'cforte'];
+// ==========================================================
+
+function checkPW() {
+  const val = document.getElementById('pwInput').value;
+  const err = document.getElementById('pwError');
+  if (PASSWORDS.includes(val)) {
+    sessionStorage.setItem('cforte_auth', 'ok');
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    err.style.display = 'none';
+    buildNav();
+    doSearch();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('cforte_auth');
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('pwInput').value = '';
+}
+
+if (sessionStorage.getItem('cforte_auth') === 'ok') {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+}
+
+// ===================== データベース =====================
+const DB = [
+  {cat:'フォルダ構造',sec:'メインフォルダ',title:'C-FORTEメインフォルダ（セルリバ・ひざ関節症）',type:'フォルダ',url:'https://drive.google.com/drive/folders/16kPJHsOi_Ykfu_6BmBTmab32TV8Zyg7T',desc:'C-FORTE全体の資料を格納するルートフォルダ。セルリバイブとひざ関節症クリニックの両事業に関わるすべての資料の起点となる。'},
+  {cat:'フォルダ構造',sec:'メインフォルダ',title:'04.C-FORTE_ナレッジDB',type:'フォルダ',url:'https://drive.google.com/drive/folders/1OFZH3JfwZJ-GSpGhjy7aaFmRrkyUmTnO',desc:'このスプレッドシート自体の格納場所。ナレッジ管理に関わる資料・DBファイルをまとめて保存している。'},
+  {cat:'フォルダ構造',sec:'院別フォルダ',title:'2.名古屋セルリバ情報',type:'フォルダ',url:'https://drive.google.com/drive/folders/1O_qVa_ScBHfHLZfO7LcbchTcww0xbNLg',desc:'名古屋セルリバイブ院の介入報告・予約データ・各種資料をまとめたフォルダ。月次レポート作成や稼働確認に使用する。'},
+  {cat:'フォルダ構造',sec:'院別フォルダ',title:'3.名古屋ひざ関節症クリニック',type:'フォルダ',url:'https://drive.google.com/drive/folders/1Oog29RhxPtPHbKjp3E6qxDlPG5xJb4OA',desc:'名古屋クリニックとの連携資料・勉強会資料・患者誘導フローなどを格納。クリニックスタッフとの情報共有に活用する。'},
+  {cat:'フォルダ構造',sec:'院別フォルダ',title:'13.中之島の情報',type:'フォルダ',url:'https://drive.google.com/drive/folders/1CzlT-7yQzdP_2mkpHmH7n60_XSm49FHC',desc:'中之島院に関連する運営資料・連絡事項を格納したフォルダ。中之島担当スタッフが参照する。'},
+  {cat:'フォルダ構造',sec:'院別フォルダ',title:'セルリバ用',type:'フォルダ',url:'https://drive.google.com/drive/folders/1BrUXIKlI4S8hQ-HBeTGhT7tDFaZrwQTN',desc:'セルリバイブ各院の運営に関わる共通資料・フォーマットを格納。院をまたいで使用するテンプレートや基準資料が中心。'},
+  {cat:'フォルダ構造',sec:'院別フォルダ',title:'委託クリニック用',type:'フォルダ',url:'https://drive.google.com/drive/folders/1ziuJBJI65RccRwLIrHhEQLt_mFPiyHfo',desc:'業務委託先クリニックとの契約・運営資料を格納。委託PT・OTが閲覧すべき基準資料や連絡事項を管理する。'},
+  {cat:'フォルダ構造',sec:'教育・勉強会フォルダ',title:'教育対象スタッフ用',type:'フォルダ',url:'https://drive.google.com/drive/folders/1DQpTr8RLpo9KZTMZhamMVY66QypmEIR4',desc:'新人・教育中スタッフに向けた資料をまとめたフォルダ。オンボーディング段階で必要な情報が集約されている。'},
+  {cat:'フォルダ構造',sec:'教育・勉強会フォルダ',title:'C-FORTE勉強資材',type:'フォルダ',url:'https://drive.google.com/drive/folders/1cLx5_rX6IBMSQROrR8_1SygoduvSsUzE',desc:'全社共通の勉強会資材を格納。定期勉強会の準備・事後共有に使用するスライドや資料が蓄積されている。'},
+  {cat:'フォルダ構造',sec:'教育・勉強会フォルダ',title:'オンライン教育資材',type:'フォルダ',url:'https://drive.google.com/drive/folders/1KMsikYj68V2tpRvksVHlpyC0l17pAQdF',desc:'遠隔地スタッフや委託PTへのオンライン教育で使用する資料を管理。Zoom等で使用するスライドや補足資料が中心。'},
+  {cat:'フォルダ構造',sec:'その他フォルダ',title:'2025年度前受金情報',type:'フォルダ',url:'https://drive.google.com/drive/folders/196nZmrVuB8Hlvfv1L8XglIlvndhObSks',desc:'2025年度の前受金に関するデータ・Notionエクスポート・スプレッドシートをまとめて格納。税理士対応時に参照する。'},
+  {cat:'フォルダ構造',sec:'その他フォルダ',title:'Instagram用',type:'フォルダ',url:'https://drive.google.com/drive/folders/1IJ9VlYL4AqfsG6uHgY9v-_8VSKQWX6j6',desc:'Instagram投稿に使用する画像・動画・デザイン素材を格納。SNS担当者が参照・アップロードするフォルダ。'},
+  {cat:'会社概要・事業戦略',sec:'コアドキュメント',title:'C-FORTEナレッジマネジメント情報整理DB',type:'スプレッドシート',url:'https://docs.google.com/spreadsheets/d/1-ri1qkp-bBiUVm1kFG5KXZwM52pt5hCgzZE3M85zWFY/edit',desc:'C-FORTE全体の情報を14タブで体系的に管理する統合ナレッジDB。全スタッフが参照できる情報の一元管理拠点。'},
+  {cat:'会社概要・事業戦略',sec:'コアドキュメント',title:'C-FORTE_コアドキュメント（原液）',type:'PDF',url:'https://drive.google.com/file/d/1d8YfPERmOnlbosmcj0jQ_CD4cjZPjM2j/view',desc:'C-FORTEの事業思想・サービス設計の根幹となるコアドキュメント。新しいスタッフや提携先への説明の出発点として使用する。'},
+  {cat:'会社概要・事業戦略',sec:'会社紹介資料',title:'c-forte（会社紹介資料）',type:'PDF',url:'https://drive.google.com/file/d/1afSt5YPmcA9-l-hn0e6DSi5g6MceVpAk/view',desc:'C-FORTEの事業概要・サービス内容・強みをまとめた基本の会社紹介スライド。初めての相手に説明する際の標準資料。'},
+  {cat:'会社概要・事業戦略',sec:'会社紹介資料',title:'株式会社C-FORTE 採用紹介スライド',type:'PDF',url:'https://drive.google.com/file/d/1gzLAA2kRqku39sMu8iA9SriltIuK_bMP/view',desc:'PT・OT・ST採用向けに特化した会社紹介スライド。C-FORTEで働くことの価値・キャリアパスを中心に構成されている。'},
+  {cat:'会社概要・事業戦略',sec:'提案書・報告書',title:'業務委託の流れ',type:'PDF',url:'https://drive.google.com/file/d/1_ja4wH1xf-Qhy5U4KW7PWYoPnl6-YLIU/view',desc:'委託セラピストがどのような流れでC-FORTEと連携するかを図解した資料。委託PT・OTの初回説明会で使用する。'},
+  {cat:'会社概要・事業戦略',sec:'提案書・報告書',title:'【活動成果報告】2025年11月〜2026年3月',type:'ドキュメント',url:'https://docs.google.com/document/d/1j2vKh4IM3raoExnN5tsx5fK0nu3Il0ABjwr4GiLZ2n0/edit',desc:'2025年11月から2026年3月までの半期活動成果をまとめた報告書。KPI実績・取り組み内容・課題を整理している。'},
+  {cat:'Cマインド・理念',sec:'Cマインド文書',title:'Cマインド 5箇条',type:'PDF',url:'https://drive.google.com/file/d/1Zt6sqeb0U78EkvdoYpBhD2xxcMmITi28/view',desc:'C-FORTEセラピストとして守るべき行動規範を5つにまとめた基準文書。全スタッフの教育・評価の軸として使用する。'},
+  {cat:'Cマインド・理念',sec:'Cマインド文書',title:'改訂版C-Mind',type:'Word',url:'https://drive.google.com/file/d/183ovcuYTzJbkCLzIwWBdHqM-7MaE50mb/view',desc:'Cマインドの改訂版ドキュメント。最新の考え方を反映した内容で、スタッフへの理念教育に使用する。'},
+  {cat:'Cマインド・理念',sec:'スタッフ管理',title:'メンバーリスト（表形式）',type:'ドキュメント',url:'https://docs.google.com/document/d/1cAKpHrmGyUizgQHXKLG0LaV3_IDjhhXEfW554hOidm4/edit',desc:'現在のC-FORTEスタッフ・委託PTの一覧表。連絡先・所属院・役割を整理しており、チーム全体の把握に使う。'},
+  {cat:'再生医療・クリニック',sec:'治療プラン・プロトコル',title:'●ひざ関節症クリニック 治療プランのまとめ',type:'PDF',url:'https://drive.google.com/file/d/13d1KWH4Kct2BI0n2MGsENDM6R1UKNH5_/view',desc:'PRP-FD・ASC・APSの各治療法の適応・費用・リハビリ期間を比較整理した資料。クリニックスタッフとの共通認識づくりに使用する。'},
+  {cat:'再生医療・クリニック',sec:'治療プラン・プロトコル',title:'ASCスライドマスター【ひざ関節編】',type:'PDF',url:'https://drive.google.com/file/d/1oy0FKrGemUcBLFwKjaSylD7EoetRxlLl/view',desc:'ASC（培養幹細胞）治療について患者にわかりやすく説明するためのスライド。初診・説明会の場で使用する。'},
+  {cat:'再生医療・クリニック',sec:'治療プラン・プロトコル',title:'【本番用】ASCのリハビリ',type:'PDF',url:'https://drive.google.com/file/d/1DpU46AOTrRI0MjeMZQJIm1DfixY_1djF/view',desc:'ASC治療後のリハビリプロトコル確定版。各フェーズの運動負荷・注意点・目標を整理しており、現場でそのまま使用できる。'},
+  {cat:'再生医療・クリニック',sec:'患者向け説明資料',title:'ひざ手帳最新(24.12)',type:'PDF',url:'https://drive.google.com/file/d/1kLaXDNk7mSeQAzLT2S8FBwcUCQHLj-5-/view',desc:'再生医療後のゲストが自己管理できるよう設計したひざ管理手帳（2024年12月最新版）。初回介入時に渡す配布資料。'},
+  {cat:'再生医療・クリニック',sec:'連携・管理マニュアル',title:'膝関節再生医療：総合比較・リハビリ管理マニュアル',type:'ドキュメント',url:'https://docs.google.com/document/d/1jnn1BSVu8JUodffR9_zopn03f6I4i-WLBX5CToUcdp4/edit',desc:'PRP・ASC・APSの特性比較と各治療後リハビリの管理基準をまとめたマニュアル。スタッフ教育・クリニック提案の共通資料として使用する。'},
+  {cat:'リハビリ・教育',sec:'初回フロー・誘導',title:'初回フロー資料',type:'PDF',url:'https://drive.google.com/file/d/17D8qPgArx3VHHKZ4GZZ0dnDEwptW2odo/view',desc:'ゲストの初回来院時における介入フロー・スタッフの動きを図解した資料。新人スタッフのOJT・ロールプレイに使用する。'},
+  {cat:'リハビリ・教育',sec:'初回フロー・誘導',title:'セルリバへの誘導とリハビリ提案方法',type:'PDF',url:'https://drive.google.com/file/d/1ibB0TF2K3vz9ZvcmdTY0wiZmqi-oyGvx/view',desc:'クリニック受診後のゲストをセルリバイブへ自然に誘導するトークフローと提案手順をまとめた実践資料。'},
+  {cat:'リハビリ・教育',sec:'オンライン教育シリーズ',title:'1回目オンライン教育',type:'PDF',url:'https://drive.google.com/file/d/1MtJP8Er8-7MgTb-YZh_hWDOro_4ttAlj/view',desc:'新人スタッフ向けオンライン教育の第1回資料。C-FORTEの基本理念・サービス概要・初回フローを中心に構成されている。'},
+  {cat:'リハビリ・教育',sec:'オンライン教育シリーズ',title:'2回目オンライン教育',type:'PDF',url:'https://drive.google.com/file/d/1M824f5ecEnOHi1--gi4J1WEqPxmbRNGH/view',desc:'オンライン教育第2回の資料。再生医療の基礎知識とリハビリとの関係性を学ぶ内容で構成されている。'},
+  {cat:'リハビリ・教育',sec:'オンライン教育シリーズ',title:'3回目オンライン教育',type:'PDF',url:'https://drive.google.com/file/d/1c7cXoJyxxbKScAY5sCaCcMN1nMsdpZlv/view',desc:'オンライン教育第3回の資料。クロージング・回数券提案・ゲスト対応の実践スキルを学ぶ内容。'},
+  {cat:'リハビリ・教育',sec:'導入・接遇',title:'【初期】接遇研修 基本の立ち振る舞いについて',type:'PDF',url:'https://drive.google.com/file/d/17vJMlhQWQiv--pWhw-hYR0GXpPykmzo4/view',desc:'入職初期のスタッフ向け接遇研修資料。ゲストへの声かけ・姿勢・言葉遣いなど基本的なホスピタリティを学ぶ内容。'},
+  {cat:'勉強会',sec:'膝蓋下脂肪体シリーズ',title:'膝蓋下脂肪体の勉強会知識',type:'PDF',url:'https://drive.google.com/file/d/1SYC6TXdjm1NZxHSqKKzzxnZWtXFw5S4f/view',desc:'膝蓋下脂肪体（IFP）の解剖・機能・病態を基礎から解説した勉強会資料。OAリハビリを理解する上での前提知識として活用する。'},
+  {cat:'勉強会',sec:'膝関節・症例',title:'膝関節リハビリについて',type:'PDF',url:'https://drive.google.com/file/d/1GpxiNbUPfLmn0ub8vYVy-AvM0DQ0a6CX/view',desc:'変形性膝OAに対するリハビリテーションの全体像を解説した資料。評価・治療・ゴール設定の基本的な考え方をまとめている。'},
+  {cat:'勉強会',sec:'全社勉強会',title:'第3回目 C-FORTE勉強会（棚橋PT）',type:'PDF',url:'https://drive.google.com/file/d/1yPO74wqz1pcg0r0KKIJGBYZiFyDHWoZk/view',desc:'棚橋PTが担当した第3回全社勉強会の資料。実技・知識の両面から再生医療リハビリの実践スキルを学ぶ内容。'},
+  {cat:'勉強会',sec:'マインド・リーダーシップ',title:'銀座式ストレッチゴール達成術_チーム成功体験事例',type:'PDF',url:'https://drive.google.com/file/d/1Ivep_wIbrllzSXyjFoIziJhFZXIGI7z-/view',desc:'銀座院スタッフが実践したストレッチゴール達成のプロセスと成功事例集。チームのモチベーション向上に活用できる。'},
+  {cat:'営業・クロージング',sec:'クロージング資料',title:'プレクロ（初診）',type:'PDF',url:'https://drive.google.com/file/d/1_gKZBO_riQfpkCzWzsfXef_xNnnU-rcx/view',desc:'初診時のプレクロージングに使用するトークスクリプト。ゲストの不安を取り除きながら次回来院につなげる流れを記載している。'},
+  {cat:'営業・クロージング',sec:'クロージング資料',title:'セルリバ 新規ゲスト クロージング資料',type:'PDF',url:'https://drive.google.com/file/d/1AJdiEQe4BbCpVG7KFcoqY3zBgsoScAyW/view',desc:'新規ゲストへの回数券提案・継続契約を促すクロージング資料。提案タイミング・言葉選び・反論対応をカバーしている。'},
+  {cat:'営業・クロージング',sec:'クロージング資料',title:'回数券販売・提案アプローチ改善マニュアル',type:'ドキュメント',url:'https://docs.google.com/document/d/1M6OYt5-brgAkfbSaYsBy_xmPDIYoyg8X-Pd93uVBxRQ/edit',desc:'回数券販売率を高めるための改善手順と実践例をまとめたマニュアル。現場スタッフの提案スキル向上に使用する。'},
+  {cat:'営業・クロージング',sec:'院別提案・プレゼン',title:'セルリバイブ大宮院',type:'PDF',url:'https://drive.google.com/file/d/1Q2xV3LdeYnrYVLcLGd50iDVi08RY6ks4/view',desc:'大宮院の施設概要・サービス内容・提案ポイントをまとめた紹介資料。大宮FCへの提案・説明場面で使用する。'},
+  {cat:'KPI・業績管理',sec:'KPIレポート・分析',title:'KPI入力用 用紙',type:'ドキュメント',url:'https://docs.google.com/document/d/16yCBAqdEb_-WgI5hH_rPzuwGR9kZYroKrIycWqK5SPI/edit',desc:'各院のスタッフがKPIデータを入力するためのフォーマット用紙。毎月の報告作業の標準化・効率化のために使用する。'},
+  {cat:'KPI・業績管理',sec:'介入実績・稼働率',title:'銀座セルリバ介入報告',type:'スプレッドシート',url:'https://docs.google.com/spreadsheets/d/12xe2BU39McTvKz1mrW3P0C0MO0hi47iVaahZ1S8SHt4/edit',desc:'銀座院の月次介入実績を記録するスプレッドシート。来院数・提案数・成約数・継続率などを管理する。'},
+  {cat:'KPI・業績管理',sec:'介入実績・稼働率',title:'名古屋セルリバ介入報告',type:'スプレッドシート',url:'https://docs.google.com/spreadsheets/d/1Fswml6Pup2VLgHkTgFYhlctpEQ6Yt2eYAO_JOIH6uA8/edit',desc:'名古屋院の月次介入実績を記録するスプレッドシート。銀座院と同フォーマットで管理し比較分析に対応している。'},
+  {cat:'業務マニュアル',sec:'Slack・コミュニケーション',title:'ひざ関節症クリニック リハビリ部門 Slack運用マニュアル',type:'ドキュメント',url:'https://docs.google.com/document/d/1u7Ri2IIjpR6Nivuc10kxKceWzy-tXvJlXR6maVJdpJI/edit',desc:'ひざ関節症クリニックのリハビリ部門専用のSlack運用ルール。チャンネル構成・投稿ルール・通知設定を定めている。'},
+  {cat:'業務マニュアル',sec:'業務・請求手順',title:'【スタッフ向け】請求書作成マニュアル',type:'ドキュメント',url:'https://docs.google.com/document/d/1D0xe2JbZj5vrdFsudxl5gzwpYjHyTW9gWV_FW8A1t-Y/edit',desc:'委託スタッフが請求書を作成する際の手順書。記載項目・提出期限・送付先を明確にし、経理処理をスムーズにする。'},
+  {cat:'業務マニュアル',sec:'業務・請求手順',title:'ポチコ予約方法',type:'PDF',url:'https://drive.google.com/file/d/1hCaItNQHrInfksYeVty6tY9bKrDOM3YD/view',desc:'ゲストがポチコを使って予約する手順を図解したガイド。高齢ゲストへの説明・受付スタッフの案内サポートに使用する。'},
+  {cat:'ミーティング',sec:'全体ミーティング',title:'2026.3.18全体ミーティング',type:'PDF',url:'https://drive.google.com/file/d/1PXnm0vLNuIv_D4kltmd--i5-tE9-d8zk/view',desc:'2026年3月18日に実施した全スタッフ対象の全体ミーティング資料。議題・決定事項・アクションプランを記録している。'},
+  {cat:'マーケティング',sec:'LINE施策',title:'CフォルテLINE施策',type:'PDF',url:'https://drive.google.com/file/d/1zV6ZZLHN8eQz-vXodI4h125Bfb8yoVfL/view',desc:'C-FORTEにおけるLINE活用の全体施策をまとめた資料。集客・ナーチャリング・フォローアップの各フェーズでの活用法を整理している。'},
+  {cat:'財務・請求書',sec:'前受金資料',title:'前受金根拠レポート_税理士提出用',type:'PDF',url:'https://drive.google.com/file/d/1PB2vbpZ_g8uUEfIy5ASZ2BiIeBtwnCkw/view',desc:'税理士に提出するための前受金根拠資料。Notion・AppSheet・スプレッドシートのデータを突合させた期末残高の証明書類。'},
+  {cat:'財務・請求書',sec:'前受金資料',title:'①今期首＝前期末 の前受金残高',type:'PDF',url:'https://drive.google.com/file/d/1nv_Xsw9BeoTN5SIY2LwAoRsXWXqq4d4T/view',desc:'前期末の前受金残高が今期首の数値と一致することを確認するための資料。税務調査や監査対応時の根拠書類として保管する。'},
+  {cat:'研究・学術',sec:'幹細胞・再生医療論文',title:'変形性膝関節症に対する脂肪由来幹細胞を利用したcell therapy',type:'PDF',url:'https://drive.google.com/file/d/18GzVBXdwGnVpf11qDNygkW4UKlECPitw/view',desc:'ASC（脂肪由来幹細胞）を用いた変形性膝OA治療の研究論文。治療メカニズム・安全性・有効性のエビデンスを解説している。'},
+  {cat:'研究・学術',sec:'学会発表資料',title:'2026 再生医療学会ポスター資料',type:'PDF',url:'https://drive.google.com/file/d/10RW33mG3F6MIv5cLOFP9Bnrz5Dhpobcd/view',desc:'2026年再生医療学会に向けて作成したポスター発表用PDF。C-FORTEの臨床データ・取り組みを学術的にまとめている。'},
+  {cat:'研究・学術',sec:'評価スケール',title:'Global Rating Scale',type:'PDF',url:'https://drive.google.com/file/d/1DzqKjJDLT8hORonS-ZrfZWFs9oHjOBXs/view',desc:'患者の全体的な改善度を評価するGlobal Rating Scale（GRS）の解説資料。研究・臨床両面でのアウトカム評価に使用する。'},
+  {cat:'研究・学術',sec:'ガイド・臨床資料',title:'靴の選び方',type:'PDF',url:'https://drive.google.com/file/d/1Qq_kOIsJxCJIbih7SuD6qmzeueaPAwhS/view',desc:'ひざOAゲストに適した靴の選び方を解説したガイド。インソールとの組み合わせを含め、日常生活指導の場で活用する。'},
+];
+
+const CATS = [...new Set(DB.map(d=>d.cat))];
+const TYPE_STYLE = {
+  'PDF':{bg:'#fde8df',tc:'#9c3310',p:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'},
+  'フォルダ':{bg:'#d9f4e9',tc:'#0d6b3f',p:'<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>'},
+  'スプレッドシート':{bg:'#dff0d8',tc:'#2d6a0a',p:'<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/>'},
+  'ドキュメント':{bg:'#ddeeff',tc:'#0c3d85',p:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>'},
+  'PowerPoint':{bg:'#fce8f3',tc:'#8a1a5e',p:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/>'},
+  'Word':{bg:'#ddeeff',tc:'#1a3a7c',p:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>'},
+  'Excel':{bg:'#e6f4d8',tc:'#2d5f0a',p:'<rect x="3" y="3" width="18" height="18" rx="2"/>'},
+  '動画':{bg:'#fff3e0',tc:'#7a4000',p:'<polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/>'},
+};
+const DEFAULT_TS = {bg:'#f1f1f1',tc:'#555',p:'<path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>'};
+
+let currentCat = 'all';
+
+function ico(p, c) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="${c||'currentColor'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+function buildNav() {
+  const nav = document.getElementById('sidenav');
+  let h = `<div class="nav-item ${currentCat==='all'?'active':''}" onclick="filterCat('all')">${ico('<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>')}すべての資料<span class="nav-count">${DB.length}</span></div>`;
+  CATS.forEach(c => {
+    const cnt = DB.filter(d=>d.cat===c).length;
+    h += `<div class="nav-item ${currentCat===c?'active':''}" onclick="filterCat('${c}')">${ico('<path d="M13 2H6a2 2 0 0 0-2 2v16"/>')}${c}<span class="nav-count">${cnt}</span></div>`;
+  });
+  nav.innerHTML = h;
+}
+
+function filterCat(cat) {
+  currentCat = cat;
+  document.getElementById('topbar-title').textContent = cat === 'all' ? 'すべての資料' : cat;
+  document.getElementById('searchInput').value = '';
+  buildNav();
+  doSearch();
+}
+
+function doSearch() {
+  const q = document.getElementById('searchInput').value.trim().toLowerCase();
+  let items = currentCat === 'all' ? DB : DB.filter(d=>d.cat===currentCat);
+  if (q) items = items.filter(d=>d.title.toLowerCase().includes(q)||d.desc.toLowerCase().includes(q)||d.sec.toLowerCase().includes(q));
+  renderResults(items, q);
+}
+
+function hl(t, q) {
+  if (!q) return t;
+  return t.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'), '<mark>$1</mark>');
+}
+
+function renderResults(items, q) {
+  const el = document.getElementById('results');
+  const meta = document.getElementById('result-meta');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state">${ico('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>','#94a3b8')}<p>該当する資料が見つかりません</p></div>`;
+    meta.textContent = '';
+    return;
+  }
+  meta.textContent = `${items.length}件`;
+  let html = '', lastSec = '';
+  items.forEach(item => {
+    if (item.sec !== lastSec) { html += `<div class="section-header">${item.sec}</div>`; lastSec = item.sec; }
+    const ts = TYPE_STYLE[item.type] || DEFAULT_TS;
+    html += `<a class="file-card" href="${item.url}" target="_blank" rel="noopener">
+      <div class="file-icon-wrap" style="background:${ts.bg}">${ico(ts.p, ts.tc)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="file-title">${hl(item.title,q)}</div>
+        <div class="file-desc">${hl(item.desc,q)}</div>
+        <div class="file-meta-row">
+          <span class="badge" style="background:${ts.bg};color:${ts.tc}">${item.type}</span>
+          <span class="file-cat">${item.cat}</span>
+        </div>
+      </div>
+    </a>`;
+  });
+  el.innerHTML = html;
+}
+
+function switchTab(tab) {
+  document.getElementById('search-panel').style.display = tab==='search' ? '' : 'none';
+  document.getElementById('chat-panel').style.display = tab==='chat' ? 'flex' : 'none';
+  document.getElementById('tab-search').className = 'tab'+(tab==='search'?' active':'');
+  document.getElementById('tab-chat').className = 'tab'+(tab==='chat'?' active':'');
+}
+
+function askQ(q) { document.getElementById('chatInput').value = q; sendChat(); }
+
+function addMsg(text, cls) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-wrap'+(cls.includes('user')?' user':'');
+  const av = document.createElement('div');
+  av.className = 'msg-avatar '+(cls.includes('user')?'user-av':'ai-av');
+  av.textContent = cls.includes('user') ? 'ME' : 'CF';
+  const msg = document.createElement('div');
+  msg.className = 'msg '+cls;
+  msg.textContent = text;
+  wrap.appendChild(av);
+  wrap.appendChild(msg);
+  const c = document.getElementById('chatMessages');
+  c.appendChild(wrap);
+  c.scrollTop = c.scrollHeight;
+  return msg;
+}
+
+async function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+  addMsg(q, 'user');
+  const thinking = addMsg('考え中...', 'ai thinking');
+  const context = DB.map(d=>`【${d.cat}／${d.sec}】${d.title}（${d.type}）: ${d.desc} URL: ${d.url}`).join('\n');
+  const prompt = `あなたはC-FORTEという再生医療リハビリ専門会社の社内ナレッジWikiアシスタントです。以下のファイル一覧を参照して、スタッフの質問に丁寧な日本語で答えてください。該当ファイルがある場合はファイル名とURLを明示してください。存在しない情報は「該当する資料が見当たりません」と伝えてください。\n\n【ファイル一覧】\n${context}\n\n【質問】${q}`;
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await res.json();
+    const reply = data.content?.[0]?.text || 'エラーが発生しました。';
+    thinking.className = 'msg ai';
+    thinking.innerHTML = reply
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/https?:\/\/[^\s）\)」]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)
+      .replace(/\n/g, '<br>');
+  } catch(e) {
+    thinking.className = 'msg ai';
+    thinking.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+  }
+}
+</script>
+</body>
+</html>
