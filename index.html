@@ -538,11 +538,6 @@ function addMsg(text, cls) {
   return msg;
 }
 
-// ===================== Gemini API設定 =====================
-function getApiKey() { return localStorage.getItem('cforte_gemini_key') || 'AIzaSyAS_aE3pRZmIlqBOQoFaIDownNHdATq-co'; }
-function setApiKey(k) { localStorage.setItem('cforte_gemini_key', k); }
-// ==========================================================
-
 async function sendChat() {
   const inp = document.getElementById('chatInput');
   const q = inp.value.trim();
@@ -550,46 +545,37 @@ async function sendChat() {
   inp.value = '';
   addMsg(q, 'user');
 
-  if (!getApiKey()) {
-    addMsg('AIチャットを使うにはGemini APIキーの設定が必要です。下のボタンから設定してください。<br><br><button onclick="promptApiKey()" style="padding:8px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">APIキーを設定する</button>', 'ai');
-    return;
-  }
+  const keywords = q.replace(/[はがのをにでとも、。？?！!って教えてくださいどこどれありますかについて資料ファイル]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+  const results = DB.filter(d => {
+    const text = (d.title + ' ' + d.desc + ' ' + d.cat + ' ' + d.sec).toLowerCase();
+    return keywords.some(k => text.includes(k.toLowerCase()));
+  });
 
-  const thinking = addMsg('考え中...', 'ai thinking');
-  const context = DB.map(d=>`【${d.cat}／${d.sec}】${d.title}（${d.type}）: ${d.desc} URL: ${d.url}`).join('\n');
-  const sysPrompt = 'あなたはC-FORTEという再生医療リハビリ専門会社の社内ナレッジWikiアシスタントです。以下のファイル一覧を参照して、スタッフの質問に丁寧な日本語で答えてください。該当ファイルがある場合はファイル名とURLを明示してください。存在しない情報は「該当する資料が見当たりません」と伝えてください。\n\n【ファイル一覧】\n' + context;
-  try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + getApiKey(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        system_instruction: { parts: [{ text: sysPrompt }] },
-        contents: [{ parts: [{ text: q }] }],
-        generationConfig: { maxOutputTokens: 1000, temperature: 0.3 }
-      })
+  let reply = '';
+  if (results.length > 0) {
+    const limited = results.slice(0, 8);
+    reply = '<strong>' + results.length + '件</strong>の関連資料が見つかりました。<br><br>';
+    limited.forEach(d => {
+      const ts = TYPE_STYLE[d.type] || DEFAULT_TS;
+      reply += '<div style="margin-bottom:10px;padding:10px;border:1px solid #e2e8f0;border-radius:8px;background:#fff">';
+      reply += '<a href="' + d.url + '" target="_blank" rel="noopener" style="color:#185FA5;font-weight:600;text-decoration:none">' + d.title + '</a>';
+      reply += ' <span style="display:inline-block;padding:1px 6px;border-radius:12px;font-size:10px;background:' + ts.bg + ';color:' + ts.tc + '">' + d.type + '</span>';
+      reply += '<br><span style="font-size:11.5px;color:#64748b">' + d.desc + '</span>';
+      reply += '</div>';
     });
-    const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || data.error?.message || 'エラーが発生しました。';
-    thinking.className = 'msg ai';
-    thinking.innerHTML = reply
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/https?:\/\/[^\s）\)」\]]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)
-      .replace(/\n/g, '<br>');
-  } catch(e) {
-    thinking.className = 'msg ai';
-    thinking.textContent = 'エラーが発生しました: ' + e.message;
+    if (results.length > 8) reply += '<br><span style="color:#64748b;font-size:12px">他 ' + (results.length - 8) + '件あります。「資料を探す」タブで検索すると全件表示されます。</span>';
+  } else {
+    reply = '「<strong>' + q + '</strong>」に該当する資料が見つかりませんでした。<br><br>';
+    reply += '別のキーワードで試してみてください。例：<br>';
+    reply += '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px">';
+    ['ASC', 'クロージング', 'KPI', '勉強会', '請求書', 'Slack'].forEach(w => {
+      reply += '<button onclick="askQ(\'' + w + 'の資料を教えて\')" style="padding:4px 12px;border:1px solid #e2e8f0;border-radius:16px;font-size:11.5px;cursor:pointer;background:#fff;color:#64748b">' + w + '</button>';
+    });
+    reply += '</div>';
   }
+  addMsg(reply, 'ai');
 }
 
-function promptApiKey() {
-  var key = prompt('Gemini APIキーを入力してください（AIza...で始まる文字列）:');
-  if (key && key.trim().startsWith('AIza')) {
-    setApiKey(key.trim());
-    alert('APIキーを保存しました。もう一度質問してみてください。');
-  } else if (key) {
-    alert('正しいAPIキーの形式ではありません。AIza...で始まる文字列を入力してください。');
-  }
-}
 
 if (sessionStorage.getItem('cforte_auth') === 'ok') {
   buildNav();
