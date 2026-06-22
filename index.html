@@ -539,7 +539,8 @@ function addMsg(text, cls) {
 }
 
 // ===================== Gemini API設定 =====================
-const GEMINI_API_KEY = 'AIzaSyCEYVp01KSJgbsWiLx1MVftmOZGIIwxaFI';
+function getApiKey() { return localStorage.getItem('cforte_gemini_key') || ''; }
+function setApiKey(k) { localStorage.setItem('cforte_gemini_key', k); }
 // ==========================================================
 
 async function sendChat() {
@@ -549,8 +550,8 @@ async function sendChat() {
   inp.value = '';
   addMsg(q, 'user');
 
-  if (GEMINI_API_KEY === 'YOUR_API_KEY_HERE') {
-    addMsg('AIチャットを使うにはGemini APIキーの設定が必要です。管理者（石田）にお問い合わせください。', 'ai');
+  if (!getApiKey()) {
+    addMsg('AIチャットを使うにはGemini APIキーの設定が必要です。下のボタンから設定してください。<br><br><button onclick="promptApiKey()" style="padding:8px 16px;background:#1a3a5c;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:13px">APIキーを設定する</button>', 'ai');
     return;
   }
 
@@ -558,7 +559,7 @@ async function sendChat() {
   const context = DB.map(d=>`【${d.cat}／${d.sec}】${d.title}（${d.type}）: ${d.desc} URL: ${d.url}`).join('\n');
   const sysPrompt = 'あなたはC-FORTEという再生医療リハビリ専門会社の社内ナレッジWikiアシスタントです。以下のファイル一覧を参照して、スタッフの質問に丁寧な日本語で答えてください。該当ファイルがある場合はファイル名とURLを明示してください。存在しない情報は「該当する資料が見当たりません」と伝えてください。\n\n【ファイル一覧】\n' + context;
   try {
-    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY, {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + getApiKey(), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -577,6 +578,16 @@ async function sendChat() {
   } catch(e) {
     thinking.className = 'msg ai';
     thinking.textContent = 'エラーが発生しました: ' + e.message;
+  }
+}
+
+function promptApiKey() {
+  var key = prompt('Gemini APIキーを入力してください（AIza...で始まる文字列）:');
+  if (key && key.trim().startsWith('AIza')) {
+    setApiKey(key.trim());
+    alert('APIキーを保存しました。もう一度質問してみてください。');
+  } else if (key) {
+    alert('正しいAPIキーの形式ではありません。AIza...で始まる文字列を入力してください。');
   }
 }
 
