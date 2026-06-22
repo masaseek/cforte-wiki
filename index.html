@@ -538,31 +538,45 @@ function addMsg(text, cls) {
   return msg;
 }
 
+// ===================== Gemini API設定 =====================
+const GEMINI_API_KEY = 'AIzaSyCEYVp01KSJgbsWiLx1MVftmOZGIIwxaFI';
+// ==========================================================
+
 async function sendChat() {
   const inp = document.getElementById('chatInput');
   const q = inp.value.trim();
   if (!q) return;
   inp.value = '';
   addMsg(q, 'user');
+
+  if (GEMINI_API_KEY === 'YOUR_API_KEY_HERE') {
+    addMsg('AIチャットを使うにはGemini APIキーの設定が必要です。管理者（石田）にお問い合わせください。', 'ai');
+    return;
+  }
+
   const thinking = addMsg('考え中...', 'ai thinking');
   const context = DB.map(d=>`【${d.cat}／${d.sec}】${d.title}（${d.type}）: ${d.desc} URL: ${d.url}`).join('\n');
-  const prompt = `あなたはC-FORTEという再生医療リハビリ専門会社の社内ナレッジWikiアシスタントです。以下のファイル一覧を参照して、スタッフの質問に丁寧な日本語で答えてください。該当ファイルがある場合はファイル名とURLを明示してください。存在しない情報は「該当する資料が見当たりません」と伝えてください。\n\n【ファイル一覧】\n${context}\n\n【質問】${q}`;
+  const sysPrompt = 'あなたはC-FORTEという再生医療リハビリ専門会社の社内ナレッジWikiアシスタントです。以下のファイル一覧を参照して、スタッフの質問に丁寧な日本語で答えてください。該当ファイルがある場合はファイル名とURLを明示してください。存在しない情報は「該当する資料が見当たりません」と伝えてください。\n\n【ファイル一覧】\n' + context;
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + GEMINI_API_KEY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, messages: [{ role: 'user', content: prompt }] })
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: sysPrompt }] },
+        contents: [{ parts: [{ text: q }] }],
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.3 }
+      })
     });
     const data = await res.json();
-    const reply = data.content?.[0]?.text || 'エラーが発生しました。';
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || data.error?.message || 'エラーが発生しました。';
     thinking.className = 'msg ai';
     thinking.innerHTML = reply
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/https?:\/\/[^\s）\)」]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)
+      .replace(/https?:\/\/[^\s）\)」\]]+/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`)
       .replace(/\n/g, '<br>');
   } catch(e) {
     thinking.className = 'msg ai';
-    thinking.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
+    thinking.textContent = 'エラーが発生しました: ' + e.message;
   }
 }
 
