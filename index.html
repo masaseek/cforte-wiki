@@ -565,6 +565,11 @@ async function sendChat() {
     thinking.textContent = 'エラーが発生しました。時間をおいて再試行してください。';
   }
 }
+
+if (sessionStorage.getItem('cforte_auth') === 'ok') {
+  buildNav();
+  doSearch();
+}
 </script>
 </body>
 </html>
