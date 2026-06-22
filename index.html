@@ -529,7 +529,7 @@ function addMsg(text, cls) {
   av.textContent = cls.includes('user') ? 'ME' : 'CF';
   const msg = document.createElement('div');
   msg.className = 'msg '+cls;
-  msg.textContent = text;
+  if (cls.includes('user')) { msg.textContent = text; } else { msg.innerHTML = text; }
   wrap.appendChild(av);
   wrap.appendChild(msg);
   const c = document.getElementById('chatMessages');
